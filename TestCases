@@ -1,0 +1,85 @@
+const { test, expect } = require("@playwright/test");
+
+const testCases = [
+  {
+    id: 1,
+    name: "Test Case 1",
+    leftNav: "Cross-functional project plan, Project",
+    column: "To do",
+    card_title: "Draft project brief",
+  },
+  {
+    id: 2,
+    name: "Test Case 2",
+    leftNav: "Cross-functional project plan, Project",
+    column: "To do",
+    card_title: "Schedule kickoff meeting",
+  },
+  {
+    id: 3,
+    name: "Test Case 3",
+    leftNav: "Cross-functional project plan, Project",
+    column: "To do",
+    card_title: "Share timeline with teammates",
+  },
+  {
+    id: 4,
+    name: "Test Case 4",
+    leftNav: "Work Requests",
+    column: "New Requests",
+    card_title: "[Example] Laptop setup for new hire",
+  },
+  {
+    id: 5,
+    name: "Test Case 5",
+    leftNav: "Work Requests",
+    column: "In Progress",
+    card_title: "[Example] Password not working",
+  },
+  {
+    id: 6,
+    name: "Test Case 6",
+    leftNav: "Work Requests",
+    column: "Completed",
+    card_title: "[Example] New keycard for Daniela V",
+  },
+];
+
+const url = "https://app.asana.com/-/login";
+const email = "ben+pose@workwithloop.com";
+const password = "Password123";
+
+test.describe("Asana Data-Driven Tests", () => {
+  testCases.forEach((data) => {
+    test(data.name, async ({ page }) => {
+      await test.step("Login to Asana", async () => {
+        await page.goto(url);
+        await page
+          .getByLabel("Email address")
+          .fill(email);
+        await page
+          .getByRole("button", { name: "Continue", exact: true })
+          .click();
+        await page.getByLabel("Password", { exact: true }).fill(password);
+        await page.getByRole("button", { name: "Log in" }).click();
+      });
+
+      await test.step("Navigate to the project", async () => {
+        const project = data.leftNav;
+        await page
+          .locator(`//span[contains(text(), "${project}")]`)
+          .first()
+          .click();
+      });
+
+      await test.step("Verify the card is within the right column", async () => {
+        const columnHeaderText = data.column;
+        const column = page.getByRole("heading", { name: columnHeaderText });
+        await expect(column).toBeVisible();
+        const parentColumn = column.locator('//ancestor::div[contains(@class, "BoardColumn")]');
+        const cardElement = parentColumn.locator(`//span[contains(text(), "${data.card_title}")]`);
+        await expect(cardElement).toBeVisible();
+      });
+    });
+  });
+});
